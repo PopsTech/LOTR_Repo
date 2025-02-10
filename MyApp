@@ -1,0 +1,108 @@
+from kivy.app import App
+from kivy.uix.widget import Widget
+from kivy.uix.image import Image
+from kivy.uix.label import Label
+from kivy.graphics import Rectangle, Color
+from kivy.clock import Clock
+from kivy.core.window import Window
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.button import Button
+import os
+
+class GameWorld(Widget):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.world_size = (3000, 3000)  # Game world size
+        self.player_speed = 5  # Movement speed
+        self.keys_pressed = set()
+        self.zoom_level = 1.5  # Default zoom level
+        
+        # Check if images exist before using them
+        world_map_path = "image.png" if os.path.exists("/mnt/data/image.png") else None
+        player_path = "player.png" if os.path.exists("player.png") else None
+
+        if not world_map_path:
+            print("Warning: image.png not found! Displaying a placeholder background.")
+
+        if not player_path:
+            print("Warning: player.png not found! Displaying a placeholder player icon.")
+
+        # Load world map as background
+        with self.canvas:
+            Color(1, 1, 1, 1)  # White background
+            if world_map_path:
+                self.bg = Rectangle(source=world_map_path, pos=self.pos, size=self.world_size)
+            else:
+                self.bg = Rectangle(pos=self.pos, size=self.world_size)  # No image, just a white background
+        
+        # Player character
+        self.player = Image(source=player_path or "", size=(50, 50), pos=(100, 100))
+        self.add_widget(self.player)
+        
+        # Mini-map
+        self.mini_map = Image(source=world_map_path or "", size=(200, 200), pos=(Window.width - 220, Window.height - 220))
+        self.add_widget(self.mini_map)
+        
+        # Mini-map player marker
+        self.mini_map_marker = Label(text="⬤", font_size=20, pos=(Window.width - 150, Window.height - 150))
+        self.add_widget(self.mini_map_marker)
+        
+        # Zoom controls
+        self.zoom_in_button = Button(text="Zoom In", pos=(Window.width - 200, 50), size=(80, 40))
+        self.zoom_out_button = Button(text="Zoom Out", pos=(Window.width - 100, 50), size=(80, 40))
+        self.zoom_in_button.bind(on_press=self.zoom_in)
+        self.zoom_out_button.bind(on_press=self.zoom_out)
+        self.add_widget(self.zoom_in_button)
+        self.add_widget(self.zoom_out_button)
+        
+        # Start game loop
+        Clock.schedule_interval(self.update, 1/60)
+        Window.bind(on_key_down=self.on_key_down, on_key_up=self.on_key_up)
+
+    def zoom_in(self, instance):
+        if self.zoom_level < 3:
+            self.zoom_level += 0.2
+            self.bg.size = (self.world_size[0] * self.zoom_level, self.world_size[1] * self.zoom_level)
+            print(f"Zoom Level: {self.zoom_level}")
+
+    def zoom_out(self, instance):
+        if self.zoom_level > 1:
+            self.zoom_level -= 0.2
+            self.bg.size = (self.world_size[0] * self.zoom_level, self.world_size[1] * self.zoom_level)
+            print(f"Zoom Level: {self.zoom_level}")
+
+    def on_key_down(self, window, key, *args):
+        if key in [119, 115, 97, 100]:  # W, S, A, D
+            self.keys_pressed.add(key)
+
+    def on_key_up(self, window, key, *args):
+        if key in self.keys_pressed:
+            self.keys_pressed.remove(key)
+
+    def update(self, dt):
+        x, y = self.player.pos
+        if 119 in self.keys_pressed:  # W
+            y += self.player_speed
+        if 115 in self.keys_pressed:  # S
+            y -= self.player_speed
+        if 97 in self.keys_pressed:  # A
+            x -= self.player_speed
+        if 100 in self.keys_pressed:  # D
+            x += self.player_speed
+        
+        # Keep player within bounds
+        x = max(0, min(x, self.world_size[0] - self.player.width))
+        y = max(0, min(y, self.world_size[1] - self.player.height))
+        self.player.pos = (x, y)
+        
+        # Update mini-map marker position
+        mini_x = (x / self.world_size[0]) * self.mini_map.width + (Window.width - 220)
+        mini_y = (y / self.world_size[1]) * self.mini_map.height + (Window.height - 220)
+        self.mini_map_marker.pos = (mini_x, mini_y)
+
+class LOTRGameApp(App):
+    def build(self):
+        return GameWorld()
+
+if __name__ == "__main__":
+    LOTRGameApp().run()

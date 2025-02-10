@@ -1,0 +1,35 @@
+weights = []
+
+# Get 4 weights from user and convert to float
+for i in range(4):
+    weight = float(input(f"Enter weight {i+1}:\n"))
+    weights.append(weight)
+
+print("Weights:", weights)
+
+print() # Add blank line
+
+# Calculate and print average with 2 decimal places using .format()
+average = sum(weights) / len(weights) 
+print("Average weight: {:.2f}".format(average))
+
+print() # Add blank line
+
+# Find and print maximum weight using .format()
+max_weight = max(weights)
+print("Max weight: {:.2f}".format(max_weight))
+
+print() # Add blank line
+
+# Get index and convert weight to kg
+index = int(input("Enter a list location (1 - 4):\n")) - 1
+pounds = weights[index]
+kilograms = pounds / 2.2
+print("Weight in pounds: {:.2f}".format(pounds))
+print("Weight in kilograms: {:.2f}".format(kilograms))
+
+print() # Add blank line
+
+# Sort and print weights
+sorted_weights = sorted(weights)
+print("Sorted weights:", sorted_weights)
